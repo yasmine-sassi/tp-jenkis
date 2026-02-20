@@ -11,7 +11,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 echo 'Récupération du code source...'
-                checkout scm
+                git branch: 'main', url: 'https://github.com/yasmine-sassi/tp-jenkis.git'
             }
         }
 
@@ -19,6 +19,8 @@ pipeline {
             steps {
                 echo 'Exécution des tests unitaires...'
                 sh '''
+                    python3 -m venv venv
+                    . venv/bin/activate
                     pip install -r requirements.txt
                     pytest test_app.py -v
                 '''
@@ -27,7 +29,7 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                echo "Construction de l'image Docker..."
+                echo "Construction de l'image Docker taguée ${BUILD_NUMBER}..."
                 sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
                 sh "docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest"
             }
@@ -35,7 +37,7 @@ pipeline {
 
         stage('Docker Push') {
             steps {
-                echo 'Publication sur Docker Hub...'
+                echo 'Connexion à Docker Hub et publication...'
                 withCredentials([usernamePassword(
                     credentialsId: 'docker-hub-credentials',
                     usernameVariable: 'DOCKER_USER',
@@ -62,4 +64,3 @@ pipeline {
         }
     }
 }
-
